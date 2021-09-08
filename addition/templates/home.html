@@ -1,17 +1,39 @@
+<!DOCTYPE html>
 <html>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <title>Grade Calculator for UCD Students</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.65">
     <head>
-        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/path/to/favicon.ico">
+        <meta charset="UTF-8">
+        <meta name="description" content="Calculate your grade point average with our automated UCD GPA calculator, that utilises the UCD grading schemes and conversion scales to help University College Dublin students determine their module grade and score.">
+        <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="{% static 'js\plugins\johnpolacek-stacktable.js-25ca16a\stacktable.js' %}"></script>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-4VK28PN9YC"></script>
+        <script type="text/javascript">
+        <!--
+
+        </script>
+        <!-- Go to www.addthis.com/dashboard to customize your tools --> <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5ffa20ad3cb9b16a"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'G-4VK28PN9YC');
+        </script>
         <script type="text/javascript">
             function clear(){
+                $('.scaleHead').show();
                 var z = numComp.selectedIndex;
-                autoFillFromSearch({{number}}, ["","","","","","","","","","","","","","","","","","","",""], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [false, false, false, false,false, false, false, false,false,false,false, false, false, false,false, false, false, false,false,false]);
+                sessionStorage.clear();
                 showHide(z);
-                $('#setScales').val(1).change();
-                gradeClear();
-                $('#modCode').val("").change();
+                $('#setScales').val(1);
+                $('#modCode').val("");
                 $('.nameHead').hide();
+                $('.scaleHead').hide();
                 $('.nameDisp').hide();
                 $('.ResRow').hide();
                 window.location.href = '/';
@@ -24,8 +46,8 @@
                 t=sessionStorage.getItem('modCode');
                 console.log("t: " + t);
                 if(sessionStorage.getItem('numComp') == 0||sessionStorage.getItem('numComp') == null){
-                    $("#numComp").val(6).change();
-                    n=5;
+                    $("#numComp").val(4).change();
+                    n=3;
                 }
                 else{
                     $('#numComp').val(sessionStorage.getItem('numComp'));
@@ -53,7 +75,6 @@
                             if({{error}}[i]=='graded'){
                                 var p = '#scale' + {{codes}}[i];
                                 console.log(p + 'should become red');
-                                $(p).css("border", "3px solid #FF0000");
                             }
                             if({{error}}[i]=='codeNotFound'){
                                 alert('Error: Module Code Not Found');
@@ -73,13 +94,20 @@
                 {% endif %}
 
                 {% if result is not none%}
+                    var len = '{{result}}'.length;
                     var arr = '{{result}}'.split(";");
                     document.getElementById('gradeRes').innerHTML = arr[0];
                     document.getElementById('gpaRes').innerHTML = arr[1];
+                    if(len>10){
+                        $('#gradeRes').css("font-size", "0.8em");
+                    }
+                    else{
+                        $('#gradeRes').css("font-size", "4em");
+                    }
                 {% endif %}
 
                 if({{calcFlag}}==1){
-                    $('body,html').animate({scrollTop: 1156}, 800);
+                    $('body,html').animate({scrollTop: 3000}, 800);
                 }
 
                 var z = n;
@@ -112,54 +140,197 @@
             </script>
             <script type="text/javascript">
             function saveSettings() {
-                $('tr:visible','#mainTable').css("border-bottom", "0px solid #000000");
-                $('tr:visible:last','#mainTable').css("border-bottom", "2px solid #007eb5");
+                $('tr:visible', '#mainTable').css("border-bottom", "0px solid #000000");
+                $('tr:visible:last', '#mainTable').css("border-bottom", "2px solid #007eb5");
+                console.log("saving!!");
                 var z = numComp.selectedIndex;
                 z++;
                 var a, b, c, d, e;
                 sessionStorage.setItem('numComp', z);
                 sessionStorage.setItem('modCode', $('#modCode').val());
-                for(var i=1 ;i<=z;i++){
-                    a='#grade' + i;
-                    b='#scale' + i;
-                    c='#weight' + i;
-                    d='#mustpass' + i;
-                    e ='#scale' + i;
-                    if($(e).val() == 0){
-                        $(e).css("border", "3px solid #FF0000");
-                    }
-                    else{
-                        $(e).css("border", "1px solid #000000");
+                var numDetect = 0;
+                for (var i = 1; i <= z; i++) {
+                    a = '#grade' + i;
+                    b = '#scale' + i;
+                    c = '#weight' + i;
+                    d = '#mustpass' + i;
+                    e = '#scale' + i;
+                    var p = "gError" + i;
+                    var we = "wError" + i;
+                    console.log("found: " + $(a).val());
+                    var gradeLetters = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E+", "E", "E-", "F+", "F", "F-", "G+", "G", "G-", "NM"];
+                    var passList = ["pass", "Pass", "PASS", "P"];
+                    var failList = ["fail", "Fail", "FAIL", "F"];
+                    var f = sessionStorage.getItem('fillFlag');
+                    var classLoop1, classLoop2, classLoop3, classLoop4;
+                    var id1, id2, id3, id4;
+                    if(screen.width <= 699){
+                        $("#headContent").css("width", "100%");
+                        $("#logo").css("width", "80%");
+                        $("#logo").css("margin", "0 auto");
+                        for(var t=1;t<=z;t++){
+                            classLoop1 = ".dupGrades" +t;
+                            classLoop2 = ".dupScales" +t;
+                            classLoop3 = ".dupWeights" +t;
+                            classLoop4 = ".dupMPs" +t;
+                            id1 = "#grade" + t;
+                            id2 = '#scale' + t;
+                            id3 = '#weight' + t;
+                            id4 = '#mustpass' + t;
+                            console.log(" " + id2 + " " + $(id2).val());
+                            $(classLoop2).val($(id2).val());
+
+                            [].forEach.call(document.querySelectorAll(classLoop1), function(el1) {
+                                el1.value = $(id1).val();
+                                console.log("relative");
+                            });
+                            [].forEach.call(document.querySelectorAll(classLoop3), function(el3) {
+                                el3.value = $(id3).val();
+                            });
+                            $(classLoop4).prop('checked', $(id4).is(":checked"));
+                        }
                     }
                     sessionStorage.setItem(a, $(a).val());
                     sessionStorage.setItem(b, $(b).val());
                     sessionStorage.setItem(c, $(c).val());
                     sessionStorage.setItem(d, $(d).is(":checked"));
                     sessionStorage.setItem(e, $(e).val());
+                    var wht = 0;
+                    if (($(b).val() == 0 && $(a).val() != "") || (passList.includes($(a).val()) == false && failList.includes($(a).val()) == false && $(b).val() == 5)) {
+                        if ($(b).val() == 0 && $(a).val() != "") {
+                            document.getElementById(p).innerHTML = "Graded modules must be input in letter form";
+                            $(a).css("border", "3px solid #FF0000");
+                        }
+                        if (passList.includes($(a).val()) == false && failList.includes($(a).val()) == false && $(b).val() == 5) {
+                            document.getElementById(p).innerHTML = "Please enter either 'pass' or 'fail'";
+                            $(a).css("border", "3px solid #FF0000");
+                            if(gradeLetters.includes($(a).val())){
+                               wht=1;
+                            }
+                        }
+                    } else {
+                        document.getElementById(p).innerHTML = ".";
+                        $(a).css("border", "1px solid #000000");
+                    }
+                    if (gradeLetters.includes($(a).val()) == false) {
+                        if (passList.includes($(a).val()) || failList.includes($(a).val())) {
+                            if ($(b).val() != 5) {
+                                document.getElementById(p).innerHTML = "Error: this component is not pass/fail.";
+                                $(a).css("border", "3px solid #FF0000");
+                            } else {
+                                document.getElementById(p).innerHTML = ".";
+                                $(a).css("border", "1px solid #000000");
+                            }
+                            numDetect = 1;
+                            console.log($(a).val() + " triggered show");
+                        } else if (parseFloat($(a).val()) >= 0 && parseFloat($(a).val()) <= 100) {
+                            numDetect = 1;
+                            console.log($(a).val() + " triggered show");
+                        } else if ($(a).val() != "") {
+                            document.getElementById(p).innerHTML = "Warning: check grade input";
+                            $(a).css("border", "3px solid #FF0000");
+                        }
+                    } else {
+                        sessionStorage.setItem("testVar", "REACHED");
+                        var doneOnce = sessionStorage.getItem("noREP");
+                        if (f == 0 && doneOnce == 0) {
+                            sessionStorage.setItem("noREP", 1);
+                            $(b).val(0).change();
+                        }
+                        console.log("CORRECTED");
+                        if(!wht){
+                            document.getElementById(p).innerHTML = ".";
+                            $(a).css("border", "1px solid #000000");
+                        }
+                        else{
+                            numDetect = 1;
+                        }
+                    }
+
+                    var weightVal = $(c).val();
+                    var weightFloat = parseFloat(weightVal);
+                    var weightStr = weightFloat.toString();
+                    console.log(c + " len: " + weightVal);
+                    console.log("len: " + weightFloat);
+                    console.log("len: " + weightStr);
+                    if (parseFloat($(c).val()) < 0 || parseFloat($(c).val()) > 100 || (weightVal.length != weightStr.length && $(c).val() != "") || (weightStr == "NaN" && $(c).val() != "")) {
+                        document.getElementById(we).innerHTML = "Warning: Check Weight Input";
+                        $(c).css("border", "3px solid #FF0000");
+                    } else {
+                        document.getElementById(we).innerHTML = ".";
+                        $(c).css("border", "1px solid #000000");
+                    }
+
+                    var totalWeight=0;
+                    var defo;
+                    var filled = 0;
+                    for(var j=1;j<=z;j++){
+                        defo = "#weight" +j;
+                        if(sessionStorage.getItem(defo)!=""){
+                            filled++;
+                        }
+                        totalWeight = totalWeight + parseFloat(sessionStorage.getItem(defo));
+                    }
+                    var weTwo = "wError" + z;
+                    console.log("tot: " + totalWeight);
+                    if(totalWeight!=100 && filled >=2){
+                        document.getElementById(weTwo).innerHTML = "Warning: Weights Do Not Add Up to 100";
+                    }
+                    else{
+                        document.getElementById(weTwo).innerHTML = ".";
+                    }
+
+                    var sWe = "sError" + i;
+                    if(gradeLetters.includes(sessionStorage.getItem(a))){
+                        document.getElementById(sWe).innerHTML = "Entering a letter grade means you can use any scale.";
+                    }
+                    else if(parseFloat($(a).val()) >= 0 && parseFloat($(a).val()) <= 100){
+                        document.getElementById(sWe).innerHTML = "Entering a numerical mark means you must specify the conversion scale";
+                    }
+                    else{
+                        document.getElementById(sWe).innerHTML = ".";
+                    }
+                }
+                if (numDetect == 1) {
+                    $('.scaleHead').show(800);
+                }
+                else {
+                    $('.scaleHead').hide(800);
                 }
             }
 
         </script>
         <script type="text/javascript">
             $(document).ready(function(){
-                $.each( $('*'), function() {
-                    if( $(this).width() > $('body').width()) {
-                        console.log("Wide Element: ", $(this), "Width: ", $(this).width());
-                    }
-                });
+                $("#title").hide();
                 var l = sessionStorage.getItem('firstTime');
+                var str;
                 console.log('l is: ' + l);
                 if(l==null){
                     sessionStorage.setItem('firstTime', 'N');
+
                     //code to only be run once:
                     sessionStorage.setItem('fillFlag', 0);
-                    console.log('set fill to 0');
+                    sessionStorage.setItem('modCode', "eg: EEEN10020");
+                    var d=sessionStorage.getItem('modCode');
+                    console.log('D:' + d);
+                    sessionStorage.setItem("noREP", 0);
+                    {% for k in list %}
+                        str = "gError" + {{k}};
+                        console.log("str: " + str);
+                        document.getElementById(str).innerHTML = ".";
+                        str = "wError" + {{k}};
+                        document.getElementById(str).innerHTML = ".";
+                        str = "sError" + {{k}};
+                        document.getElementById(str).innerHTML = ".";
+                    {% endfor %}
                 }
                 var s ='';
                 var f = sessionStorage.getItem('fillFlag');
                 var d ='';
                 if(f==0){
                     $('.nameHead').hide();
+                    $('.scaleHead').hide();
                     $('.nameDisp').hide();
                 }
                 if({{calcFlag}}==0){
@@ -184,12 +355,29 @@
                 }
                 else if(f==1){
                     console.log("TOGGLED");
-                    $('body,html').animate({scrollTop: 1156}, 450);
+                    $('body,html').animate({scrollTop: 390}, 800);
                 }
+                if (screen.width <= 699) {
+                    $('#mainTable').cardtable({hideOriginal:true});
+                    $('#mainTable').hide();
+                }
+                //-->
                 loadSettings();
                 var d;
                 d=sessionStorage.getItem('modCode');
                 $('#modCode').val(d).change();
+                var str;
+                {% if s is not None %}
+                    for(var j =1; j<={{returnedN}}; j++){
+                        str = "gError" + j;
+                        console.log("g: " + str);
+                        document.getElementById(str).innerHTML = "AutoFilled.";
+                        str = "wError" + j;
+                        document.getElementById(str).innerHTML = "AutoFilled.";
+                        str = "sError" + j;
+                        document.getElementById(str).innerHTML = "AutoFilled.";
+                    }
+                {% endif %}
             });
         </script>
         <script type="text/javascript">
@@ -210,9 +398,11 @@
         <script type="text/javascript">
           function gradeClear() {
             var b, y;
+            console.log('clearing grades!');
             for(var i=0 ;i<{{number}};i++){
                 y=i+1;
                 b='#grade' + y;
+                sessionStorage.setItem(b, "");
                 $(b).val("").change();
             }
           }
@@ -244,12 +434,9 @@
          <script type="text/javascript">
             function setScales(v) {
                 var b;
-                if(v==0){
-                    v=1;
-                }
                 for(var i=1 ;i<={{number}};i++){
                     b="#scale" + i;
-                    $(b).val(v).change();
+                    $(b).val(v);
                 }
             }
         </script>
@@ -262,7 +449,7 @@
 
         .mainTable{
             border-collapse: collapse;
-            margin: 25px 0;
+            margin: 0;
             font-size: 0.9em;
             max-width: 1000px;
             border-radius: 10px 10px 0 0;
@@ -298,22 +485,26 @@
         .line{
             border: 2px dotted #007eb5;
             border-radius: 5px;
+            padding-right = 250px;
         }
 
         .mainContainer{
-            padding-top: 25px;
+            padding-top: 5px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow: auto;
         }
         .submitBtn{
             background-color: #007eb5;
             color: white;
+            margin-top: 15px;
+            margin-bottom: 15px;
             border: 3px solid #ffffff;
             font-size: 1.3em;
             border-radius: 10px 10px 10px 10px;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.17);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
         }
         .submitBtn:hover{
             background-color: #005d85;
@@ -330,43 +521,34 @@
         .Btn:hover{
             background-color: #005d85;
         }
-
+        .Btn2{
+            background-color: #ffffff;
+            color: #007eb5;
+            font-weight: bold;
+            border: 2px solid #007eb5;
+            font-size: 1.1em;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 10px 10px 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.17);
+        }
+        .Btn2:hover{
+            background-color: #f3f3f3;
+        }
         #scrollWrapper{
             width:100%;
             overflow: auto;
-
+            align-items: center;
         }
 
-        #wrapper {
-            margin-top: 25px;
-            margin-bottom: 50px;
-            margin-right: auto;
-            margin-left: auto;
-            display: flex;
-            width: 1350px;
-            border-radius: 10px 10px 10px 10px;
-            border: 2px solid #3c3c3c;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.17);
-            overflow: scroll;
-        }
-        #first {
-            padding-left: 40px;
-            padding-right: 40px;
-            padding-top: 40px;
-            padding-bottom: 5px;
-            width: 1030px;
-            float:left;
-        }
-        #second {
-            padding-left: 20px;
-            padding-right: 20px;
-            padding-top: 20px;
-            width: 300px;
-            padding-bottom: 40px;
-            background-color: #f3f3f3;
-            float: left;
-        }
+       #top{
+            margin: 0 auto;
+            width:60%;
+       }
+
         .nameDisp{
+            margin-bottom: 5px;
             font-weight: bold;
             font-size: 1.5em;
             color: #3c3c3c;
@@ -380,11 +562,9 @@
         }
 
         .intro{
-            margin-top: 50px;
+            margin-top: 15px;
             margin-bottom: 20px;
-            margin-right: auto;
-            margin-left: auto;
-            width: 70%
+            text-align: center;
             color: #3c3c3c;
         }
 
@@ -399,7 +579,7 @@
 
         #header{
             width: 100%;
-            height: 90px;
+            height: 110px;
             margin-left: -35px;
             margin-top: -35px;
             margin-right: -35px;
@@ -408,13 +588,20 @@
 
         }
         #headContent{
-            align-text: center;
-            margin-right: auto;
-            margin-left: auto;
+            text-align: center;
+            margin: 0 auto;
             padding-top: 25px;
-            width: 500px;
+            padding-top: 0;
+            margin-top: 0;
+            width: 750px;
             color: white;
-            font-size: 3em;
+            font-size: 1.5em;
+            display: flex;
+        }
+
+        #logo{
+            padding: 10px;
+            padding-top: 33px;
         }
 
         .ResRow{
@@ -422,10 +609,11 @@
             margin-bottom: 20px;
             margin-right: auto;
             margin-left: auto;
-            max-width: 500px;
+            max-width: 800px;
         }
 
         .disclaimer{
+            margin: 0 auto;
             margin-top: 25px;
             margin-bottom: 20px;
             margin-right: auto;
@@ -438,6 +626,7 @@
         }
 
         .credit{
+            margin: 0 auto;
             margin-top: 35px;
             margin-bottom: 5px;
             margin-right: auto;
@@ -450,9 +639,12 @@
 
         .wrapperBottom{
             padding-top: 25px;
-            padding-bottom: 5px;
+            padding-bottom: 45px;
+            margin-top: 25px;
             background-color: #3c3c3c;
             height: auto;
+            align-items: center;
+            text-align: center;
             margin-bottom: -100px;
             margin-left: -50px;
             margin-right: 0px;
@@ -469,9 +661,6 @@
         .Res1{
             font-size: 2em;
         }
-        .Res2{
-            font-size: 4em;
-        }
         .Res3{
             font-size: 1.5em;
         }
@@ -482,113 +671,210 @@
         #linkForm{
             font-size: 0.8em;
         }
+        ::placeholder {
+           color: #b8b8b8;
+           font-weight: 50;
+        }
 
+       .errorTXT{
+            font-size: 0.7em;
+            font-weight: 100;
+            color: #007eb5
+       }
+       .sErrorTXT{
+            font-size: 0.7em;
+            font-weight: 100;
+            color: #007eb5
+       }
+       .scaleHead{
+            max-width: 220px;
+       }
+       .scaleHeadIn{
+            animation: fadeIn 1.5s;
+            animation-delay: 0s;
+            animation-fill-mode: forward;
+            -webkit-animation-iteration-count: 1;
+       }
+       .scaleHeadOut{
+            animation: fadeOut 1.5s;
+            animation-delay: 0s;
+            animation-fill-mode: both;
+            -webkit-animation-iteration-count: 1;
+       }
+       @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+       }
+       @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+       }
+
+       #USP{
+            height: auto;
+            background-color: #007eb5;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            margin-bottom: 7px;
+            border-radius: 10px 10px 10px 10px;
+       }
+       #modCode{
+            width: 55%;
+            color: #3c3c3c;
+            height: 15%;
+            margin-top: 10px;
+            font-size: 1.1em;
+            text-align: center;
+            border-radius: 10px 10px 10px 10px;
+       }
+       #fillReq{
+            font-size: 1.4em;
+            color: white;
+            font-weight: 100;
+       }
+       input[type=text] {
+          text-align: center;
+          padding: 5px;
+          width: 90px;
+          border-radius: 7px 7px 7px 7px;
+       }
+       .nameHead{
+            max-width: 100px;
+       }
+       select {
+          text-align: center;
+          padding: 5px;
+          width: 220px;
+          font-size: 0.8em;
+          text-overflow: ellipsis;
+          border-radius: 7px 7px 7px 7px;
+       }
+       .donate{
+            margin: 10px;
+       }
+       .love{
+            font-size: 0.9em;
+            color: #fec538;
+       }
      </style>
 
+
     <div class="mainCenter">
-        <div class="head" id="header">
-            <div class="pageTitle" id="headContent">
-                <output>UCD Grade Calculator</output>
-                </div>
-        </div>
-        <div class="intro">
-            <output>UCD 21 Point System Module Grade Calculator. Please read the instructions to the right of the table before use.</output>
-            <br><br><a href="https://forms.gle/vKm7B5HyR1phHXDj8" " target="_blank" rel="noopener noreferrer" id="linkForm">Faced any errors? Report them here.</a>
-        </div>
-
-
-    <div id="scrollWrapper">
-        <div id="wrapper">
-            <div id="first">
-
-                <form action="scrapeUCD">
-                    AutoFill with Module Code: <input type="text" name =modCode id =modCode onchange="saveSettings()">
-                    <input type="submit" class="Btn" value="AutoFill" onclick="sessionStorage.setItem('fillFlag', 1)"><br>
-                </form>
-                 <hr class="line">
-                Options:<br> Clear Table: <input type="button" value="Clear" class="Btn" id="clearAll" name="clearAll"  onclick="window.clear()">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set Grading Scale for all Components: <select name=setScales id="setScales" class="setScales" onchange="setScales(this.selectedIndex)">
-                        <option value=0>Select a Scale to Quick Fill</option>
-                        <option value=1>Standard Conversion Grade Scale 40%</option>
-                        <option value=2>Alternative Linear Conversion Grade Scale 40%</option>
-                        <option value=3>Alternative Non-Linear Conversion Grade Scale 50%</option>
-                        <option value=4>Alternative Linear Conversion Grade Scale 60%</option>
-                </select><br>
-                <form action="home" id="myForm">
-                    <br> <br>Manual: Select Number of Components in Module:
-                    <select name=numComp id="numComp" class="numComp" onchange="showHide(this.selectedIndex); saveSettings()">
-                        {% for i in list %}
-                        <option value={{i}}>{{i}}</option>
-                        {% endfor %}
-                    </select>
-                    <hr class="line">
-                        <div class="mainContainer">
-                        <output id="nameDisp"  class="nameDisp"></output>
-                        <table class = "mainTable" id="mainTable">
-                            <thead>
-                              <tr>
-                                <th>No.</th>
-                                <th class="nameHead">Component Name</th>
-                                <th>Grade <br> (Letter/Percentage)</th>
-                                <th>Component <br> Weight <br> (adds up to 100)</th>
-                                <th>Grading Scale</th>
-                                <th>Must Pass Module?</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                                 {% for i  in list%}
-                                 <tr class = row{{i}}>
-                                    <td><p style="text-align:center;">{{i}}</p></td>
-                                    <td class="nameHead"><p style="text-align:center;"><output name =out{{i}} id ="out{{i}}"></output></p></td>
-                                    <td><input type="text" name =grade{{i}} id =grade{{i}} onchange="saveSettings()"></td>
-                                    <td><input type="text" name =weight{{i}} id =weight{{i}} onchange="saveSettings()"></td>
-                                    <td><select name=scale{{i}} id="scale{{i}}" onchange="saveSettings()">
-                                        <option value=1>Standard Conversion Grade Scale 40%</option>
-                                        <option value=2>Alternative Linear Conversion Grade Scale 40%</option>
-                                        <option value=3>Alternative Non-Linear Conversion Grade Scale 50%</option>
-                                        <option value=4>Alternative Linear Conversion Grade Scale 60%</option>
-                                        <option value=0>Grading Scale not Specified by UCD </option>
-                                    </select></td>
-                                    <td><p style="text-align:center;"><input type="checkbox" id=mustpass{{i}} name="mustpass{{i}}" value="Y" onchange="saveSettings()"></p></td>
-                                 </tr>
-                                 {% endfor %}
-                            </tbody>
-                        </table>
-                            <input class="submitBtn" type="submit" name ="submit" value="Calculate Module Grade">
-                        </div>
-                    </div>
-                    </form>
-                    <div class="instructions" id="second">
-                        <output><p style="font-size: 1.5em; text-align:center">Instructions:</p> <p style="text-align:left;"> If you have your module code please type it in the "Autofill Module Code" entry and click “Autofill” next to it. This would input component weights and scales automatically. The scales are sometimes not specified by UCD, only labelled as 'graded'; in this case, highlighted grading scales must be input manually after AutoFilling - you may need to consult your module coordinator for the correct scale.
-                        <br><br>
-                            Alternatively, you can enter the data in the boxes manually. Make sure that the overall weight of all components is 100.
-                        <br><br>
-                        Grades can be entered as percentages (out of 100) or in their letter format (A+, A, ...). If you enter grades in letter format, you do not need to worry about the grading scheme and you can freely pick any, otherwise make sure it matches the one provided by your module coordinator.
-                        <br><br>
-                        You can, at any time, clear the table by pressing the clear button. You can also set one scale for all components using the "Set Grading Scale for all Components" drop down list. Lastly, you can modify the number of components in the module at any time using the "Manual: Select Number of Components in Module" input.
-                        <br><br>
-                        Once you are happy with your inputs, press the Calculate Module Grade button to get your overall final result.</p>
-                        </output>
-            </div>
-        </div>
+       <div class="head" id="header">
+          <div class="pageTitle" id="headContent">
+              <div id="logo">
+                <img width="100%" height="auto" src="{% static 'title.png' %}" alt="LogoLogo"><output>
+              </div>
+              <div id="title">
+                <h1>UCD Grade Calculator</h1></output>
+              </div>
+          </div>
+       </div>
+       <div class="intro">
+           <output><h2>UCD GPA Module Grade Calculator for Students. </h2>We Made your Life Easy! Simply Enter Your UCD Module Code and Your Grades to Receive Your Final Module Grade!</output>
+          <br><br><a href="https://forms.gle/vKm7B5HyR1phHXDj8" target="_blank" rel="nofollow" id="linkForm">Faced any errors? Report them here.</a>
+       </div>
+       <div id="scrollWrapper">
+          <div id="top">
+             <div id="USP">
+             <form action="scrapeUCD">
+                 <output id="fillReq">AutoFill with Module Code: </output> <br><input type="text" name =modCode id =modCode onchange="saveSettings()" placeholder="eg: EEEN10020">
+                <br><input type="submit" class="Btn2" value="AutoFill &#10004;&#65039;" onclick="sessionStorage.setItem('fillFlag', 1)"><br>
+             </form>
+             </div>
+             <hr class="line">
+             Options:<br> Clear Table: <input type="button" value="Clear" class="Btn" id="clearAll" name="clearAll"  onclick="window.clear()">
+             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set Grading Scale for all Components:
+             <select name=setScales id="setScales" class="setScales" onchange="setScales(this.value)">
+                <option value=-1>Select a Scale to Quick Fill</option>
+                <option value=1>Standard Scale 40%</option>
+                <option value=2>Alternative Linear Scale 40%</option>
+                <option value=3>Alternative Non-Linear  Scale 50%</option>
+                <option value=4>Alternative Linear Scale 60%</option>
+                <option value=5>Pass/Fail</option>
+                <option value=0>Graded</option>
+             </select>
+             <br>
+             <form action="home" id="myForm">
+                <br> <br>Manual: Select Number of Components in Module:
+                <select name=numComp id="numComp" class="numComp" onchange="showHide(this.selectedIndex); saveSettings()">
+                   {% for i in list %}
+                   <option value={{i}}>{{i}}</option>
+                   {% endfor %}
+                </select>
+                <hr class="line">
+          </div>
+          <div class="mainContainer">
+          <output id="nameDisp"  class="nameDisp"></output>
+          <table class = "mainTable" id="mainTable">
+          <thead>
+          <tr>
+          <th>Num</th>
+          <th class="nameHead">Component Name</th>
+          <th>Grade/Mark</th>
+          <th>Component Weight <br> (adds up to 100)</th>
+          <th class="scaleHead" id="scaleHead">Grading Conversion Scale</th>
+          <th>Must Pass Component?</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for i  in list%}
+          <tr class = row{{i}}>
+          <td>{{i}}
+          <br> <output class="errorTXT">.</output>
+          </td>
+          <td class="nameHead"><p style="text-align:center;"><output name =out{{i}} class="nameHead" id ="out{{i}}"></output></p></td>
+          <td><input type="text" name =grade{{i}} id =grade{{i}} class="dupGrades{{i}}" onchange="saveSettings()" placeholder="eg: A/90/pass" title="Letter/Numerical Grade. Entering a Numerical mark will show the conversion scales.">
+          <br> <output class="errorTXT" id="gError{{i}}"></output>
+          </td>
+          <td><input class="dupWeights{{i}}" type="text" name =weight{{i}} id =weight{{i}} onchange="saveSettings()" placeholder="eg: 25" title="Numerical Values; Must Add Up to 100.">
+          <br> <output class="errorTXT" id="wError{{i}}"></output>
+          </td>
+          <td class="scaleHead"><select class=dupScales{{i}} name=scale{{i}} id="scale{{i}}" onchange="saveSettings()" title="Numerical Mark was entered: Select a conversion scale if you did not AutoFill.">
+          <option value=1>Standard Scale 40%</option>
+          <option value=2>Alternative Linear Scale 40%</option>
+          <option value=3>Alternative Non-Linear Scale 50%</option>
+          <option value=4>Alternative Linear Scale 60%</option>
+          <option value=5>Pass/Fail Grading Scale</option>
+          <option value=0>Graded </option>
+          </select>
+          <br> <output class="sErrorTXT" id="sError{{i}}"></output>
+          </td>
+          <td><input class="dupMPs{{i}}" type="checkbox" id=mustpass{{i}} name="mustpass{{i}}" value="Y" onchange="saveSettings()" title="If a must pass component is failed, the entire module is failed as well.">
+          <br> <output class="errorTXT">.</output>
+          </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+          <input class="submitBtn" type="submit" name ="submit" value="Calculate Module Grade">
+          </div>
+       </div>
+       </form>
     </div>
+    <div class="wrapperBottom">
+       <div class = "ResRow">
+          <output class="Res1"> Result: </output>
+          <output class="Res2" id="gradeRes"></output>
+          <br> <output class="Res3"> Module GPA: </output>
+          <output class="Res4" id="gpaRes"></output>
+       </div>
+       <div class="love">
+            <output> Love ❤ this tool? Buy Us a Coffee! (PayPal) </output>
+       </div>
+       <div class="donate">
+           <form action="https://www.paypal.com/donate" method="post" target="_top">
+                <input type="hidden" name="hosted_button_id" value="QURBRUUQSC9S2" />
+                <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+                <img alt="" border="0" src="https://www.paypal.com/en_IE/i/scr/pixel.gif" width="1" height="1" />
+            </form>
+       </div>
+       <div class = "disclaimer">
 
-
-        <div class="wrapperBottom">
-            <div class = "ResRow">
-                <output class="Res1"> Result: </output>
-                <output class="Res2" id="gradeRes"></output>
-                <br> <output class="Res3"> Module GPA: </output>
-                <output class="Res4" id="gpaRes"></output>
-            </div>
-
-            <div class = "disclaimer">
-                <output>DISCLAIMER: this calculator uses the 21 point calculation system provided by UCD to compute the overall module grade. This result is not officially endorsed by UCD, and can vary from your actual result based on the calculation methods of the respective Module Coordinator. By your use of this calculator, you agree that the obtained result is only approximate, non-binding and for estimation purposes only.</output>
-            </div>
-
-            <div class = "credit">
-                <output>Grade Calculator made by UCD Engineering Students Aness Qawlaq and Yevhenii Mormul as an Extracurricular Project</output>
-            </div>
-        </div>
+          <output>DISCLAIMER: this calculator uses the 21 point calculation system provided by UCD to compute the overall module grade. This result is not officially endorsed by UCD, and can vary from your actual result based on the calculation methods of the respective Module Coordinator. By your use of this calculator, you agree that the obtained result is only approximate, non-binding and for estimation purposes only. Accurate with UCD Grading Schemes as of 2021.</output>
+       </div>
+       <div class = "credit">
+          <output>Grade Calculator made by University College Dublin Engineering Students Aness Qawlaq and Yevhenii Mormul as an Extracurricular Project</output>
+       </div>
     </div>
 </html>

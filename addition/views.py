@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-import logging
 import requests
 import time
 
@@ -13,8 +12,6 @@ def check_float(numb):
         return False
 
 
-# Create your views here.
-
 def home(request):
     mods = []
     res = ""
@@ -22,7 +19,6 @@ def home(request):
     for i in range(num):
         mods.append(i + 1)
     if "submit" in request.GET:
-        # WRITE BACK END CODE HERE, PLACING FINAL RESULT IN res VARIABLE:
 
         grades = []
         weights = []
@@ -35,9 +31,6 @@ def home(request):
             exec("scales.append(request.GET.get('scale" + str(j) + "','0'))")
             exec("mustpasses.append(request.GET.get('mustpass" + str(j) + "', 'N'))")
 
-        print('pass', mustpasses)
-        print('weight', weights)
-        print('grades', grades)
         res = average_mod(weights, grades, scales, mustpasses)
 
     if res != "":
@@ -58,30 +51,44 @@ def average_mod(weight, score, grad_mode, mustpass):
     China = {96.67: "A+", 93.33: "A", 90: "A-", 86.67: "B+", 83.34: "B", 80: "B-", 76.67: "C+", 73.33: "C", 70: "C-",
              66.67: "D+", 63.33: "D", 60: "D-", 0: 0}
     Calc_point = {"A+": 20.5, "A": 19.5, "A-": 18.5, "B+": 17.5, "B": 16.5, "B-": 15.5, "C+": 14.5, "C": 13.5,
-                  "C-": 12.5, "D+": 11.5, "D": 10.5, "D-": 9.5, 0: 0}
+                  "C-": 12.5, "D+": 11.5, "D": 10.5, "D-": 9.5, 0: 0, "P": 20.5, "F": 0}
     Lower = {20: "A+", 19: "A", 18: "A-", 17: "B+", 16: "B", 15: "B-", 14: "C+", 13: "C", 12: "C-", 11: "D+", 10: "D",
              9: "D-"}
+    Pass_list = {"PASS": "P", "pass": "P", "Pass": "P", "P": "P", "FAIL": "F", "fail": "F", "Fail": "F", "F": "F"}
 
     mod_tot = 0
     score2 = []
     ErrStr = []
     w_sum = 0
 
+    # input validation
     for i in weight:
-        if check_float(i) == False or (float(i) > 100 and float(i) < 0):
+        if check_float(i) == False or (float(i) > 100 or float(i) < 0):
             return ("Error, a Weight Value is Invalid, Negative, or Exceeds 100: " + str(i) + "; ")
         w_sum += float(i)
     if (w_sum != 100):
         return ("Error: The Sum of all Component Weights Should be 100, but is currently " + str(w_sum) + "; ")
 
-    for i in score:
-        if i in ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E+", "E", "E-", "F+", "F", "F-",
-                 "G+", "G", "G-", "NM"]:
+    for i in range(len(score)):
+        if score[i] in Pass_list:
+            score[i] = Pass_list[score[i]]
+
+    for i in range(len(score)):
+        if grad_mode[i] == "5" and score[i] in ["P", "F"]:
             i = i
-        elif check_float(i) and (float(i) <= 100 and float(i) >= 0):
+        elif grad_mode[i]=="5":
+            return("Please Ensure Inputs for pass/fail components are either (pass) or (fail) ; ")
+        elif score[i] in ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E+", "E", "E-", "F+",
+                          "F", "F-",
+                          "G+", "G", "G-", "NM"]:
             i = i
+        elif check_float(score[i]) and (float(score[i]) <= 100 and float(score[i]) >= 0):
+            if (grad_mode[i] == "0"):
+                return ("Error, please enter the grade in alphabetical form, if you select (Graded) scheme ; ")
+            else:
+                i = i
         else:
-            return ("Error, grade is invalid, either negative or exceeds 100: " + str(i)+ "; ")
+            return ("Error, grade is invalid, either negative or exceeds 100: " + str(score[i]) + "; ")
 
     for i in range(len(score)):
         # grading mode def
@@ -95,11 +102,9 @@ def average_mod(weight, score, grad_mode, mustpass):
             mode = Alt_Non_Lin
         elif mode == "4":
             mode = China
-        else:
-            return("Please Specify Grading Scales" + "; ")
 
         # converting grades ABC or Numb to Numb
-        if score[i] in ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-"]:
+        if score[i] in ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "P", "F"]:
             score2.append(score[i])
         elif check_float(score[i]):
             for j in mode:
@@ -108,18 +113,29 @@ def average_mod(weight, score, grad_mode, mustpass):
                     break
         else:
             score2.append(0)
+
         # finding tot grade in 21 scale
         try:
             mod_tot += Calc_point[score2[i]] * float(weight[i]) / 100.0
+
         except ValueError:
             mod_tot = mod_tot
 
-    # yes or no
+    # yes or no in must pass
     for i in range(len(score2)):
-        if score2[i] == 0 and mustpass[i] == "Y":
+        if (score2[i] == 0 or score2[i] == "F") and mustpass[i] == "Y":
             return "Fail;0"
-    # returning the overall grade, mark and all the other data
 
+    loc = 0
+    for i in grad_mode:
+        print(i)
+        if (i == "5"):
+            loc += 1
+    print(loc)
+    if (loc == len(grad_mode) and mod_tot >= 9):
+        return "PASS;4.2"
+
+    # returning the overall grade, mark and all the other data
     for i in Lower:
         if mod_tot >= i:
             print(type(Lower[i]), type(str((i + 1) / 5)))
@@ -139,7 +155,8 @@ def scrapeUCD(request):
     gr_dict = {"Graded": 0, "Standard conversion grade scale 40%": 1,
                "Alternative linear conversion grade scale 40%": 2,
                "Alternative non-linear conversion grade scale 50%": 3,
-               "Alternative linear conversion grade scale 60%": 4}
+               "Alternative linear conversion grade scale 60%": 4,
+               "Pass/Fail Grade Scale": 5}
     module = (request.GET['modCode'])
     module = list(module)
     for i in range(len(module)):
@@ -184,17 +201,21 @@ def scrapeUCD(request):
         weight.append((i[6][(i[6].index("\"rightaligntext\">") + len("\"rightaligntext\">")):(i[6].index("</TD>"))]))
         mustpass.append(i[5][:(i[5].index("</TD>"))])
 
-    for i in comp:
-        i = i.split(" ")
-        for j in i:
+    for i in range(len(comp)):
+        comp[i] = (comp[i].split(" "))[:5]
+        for j in range(len(comp[i])):
+            print(comp[i][j])
             try:
-                j = j[0].capitalize() + j[1:]
+                comp[i][j] = comp[i][j][0].capitalize() + comp[i][j][1:]
             except IndexError:
-                j = j[0].capitalize()
-        i = (elem[0:4] for elem in i)
-        i = " ".join(i)
-
+                try:
+                    comp[i][j] = comp[i][j][0].capitalize()
+                except IndexError:
+                    j = j
+        comp[i] = " ".join(comp[i])
 
     return render(request, 'home.html',
                   {'returnedN': len(comp), 'names': comp, 's': grading, 'w': weight, 'm': mustpass, 'number': 20,
                    'list': mods, 'error': ErrStr, 'calcFlag': 0, 'title': name, 'codes': ErrCodes})
+
+

@@ -24,7 +24,7 @@ SECRET_KEY = '&)0fh3v2_p=552y0pfw+o7vs7+lfo-o-p#u6apb#0d+1pt@_3#'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['ucd-calc.herokuapp.com', '127.0.0.1', 'www.ucdcalc.tk']
 
 # Application definition
 
@@ -36,8 +36,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'addition',
-    'favicon'
+    'django.contrib.sitemaps',
 ]
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -47,9 +49,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 TEMPLATE = 'C:\\Users\\aness\\Desktop\\ucd-calc\\first\\addition\\templates'
-STATIC_URL = '/static/'
 ROOT_URLCONF = 'src.urls'
 TEMPLATES = [
     {
@@ -113,4 +115,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
