@@ -1,0 +1,10 @@
+<div class = "ResRow">
+    <br> <output class="Res3"> Overall GPA: </output>
+    {% if failFlag == False %}
+        <output class="Res4" id="gpaRes">{{result}}</output>
+    {% else %}
+        <output class="" id="gpaRes">{{result}}</output>
+    {% endif %}
+    <br> <output class="Res3"> Award: </output>
+    <output class="Res4" id="hons">{{award}}</output>
+ </div>

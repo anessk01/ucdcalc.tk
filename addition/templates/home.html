@@ -1,9 +1,12 @@
+{% load humanize %}
+
 <!DOCTYPE html>
 <html>
     {% load static %}
     <title>Grade Calculator for UCD Students</title>
     <meta name="viewport" content="width=device-width, initial-scale=0.65">
     <head>
+        <link rel="stylesheet" href="/static/css/classes.css"/>    
         <link rel="shortcut icon" href="/path/to/favicon.ico">
         <meta charset="UTF-8">
         <meta name="description" content="Calculate your grade point average with our automated UCD GPA calculator, that utilises the UCD grading schemes and conversion scales to help University College Dublin students determine their module grade and score.">
@@ -509,6 +512,22 @@
         .submitBtn:hover{
             background-color: #005d85;
         }
+        .submitBtnG{
+            background-color: #fec538;
+            color: #3c3c3c;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            margin-right: 5px;
+            margin-left: 5px;
+            border: 3px solid #3c3c3c;
+            font-size: 1.3em;
+            border-radius: 10px 10px 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 0 7px rgba(0, 0, 0, 0.7);
+        }
+        .submitBtnG:hover{
+            background-color: #e6b036;
+        }
         .Btn{
             background-color: #007eb5;
             color: white;
@@ -541,6 +560,11 @@
             overflow: auto;
             align-items: center;
         }
+
+       .top{
+            margin: 0 auto;
+            width:60%;
+       }
 
        #top{
             margin: 0 auto;
@@ -718,6 +742,29 @@
             margin-bottom: 7px;
             border-radius: 10px 10px 10px 10px;
        }
+       #top, .boxClass {
+            display: block;
+        }
+       .boxClass{
+            {% comment %} top: 5px; {% endcomment %}
+            margin: 0 auto;
+            color: white;
+            font-size: 1em;
+            {% comment %} width:60%; {% endcomment %}
+            height: auto;
+            background-color: #083c3c;
+            padding: 30px;
+            {% comment %} paddingbottom: 15px; {% endcomment %}
+            {% comment %} margin-bottom: 7px; {% endcomment %}
+            border-radius: 10px 10px 10px 10px;
+       }
+
+       .linkStyle:hover{
+           color: white;
+       }
+       .linkStyle{
+           color: #fec538;
+       }
        #modCode{
             width: 55%;
             color: #3c3c3c;
@@ -772,7 +819,14 @@
        </div>
        <div class="intro">
            <output><h2>UCD GPA Module Grade Calculator for Students. </h2>We Made your Life Easy! Simply Enter Your UCD Module Code and Your Grades to Receive Your Final Module Grade!</output>
-          <br><br><a href="https://forms.gle/vKm7B5HyR1phHXDj8" target="_blank" rel="nofollow" id="linkForm">Faced any errors? Report them here.</a>
+           <div class="top"><br><br>
+            {% comment %} <div class="boxClass">
+                    <img width="20%" height="auto" src="{% static 'elective.png' %}" alt="LogoLogo"><output>
+                    <br>Struggling to pick the right UCD elective? Sign up to our partner site to view module feedback, elective recommendations and more
+                    <a href="http://electivehq.tk" class="linkStyle">here</a> 
+                </div> {% endcomment %}
+            </div>
+           <a href="https://forms.gle/vKm7B5HyR1phHXDj8" target="_blank" rel="nofollow" id="linkForm">Faced any errors? Report them here.</a>
        </div>
        <div id="scrollWrapper">
           <div id="top">
@@ -782,6 +836,8 @@
                 <br><input type="submit" class="Btn2" value="AutoFill &#10004;&#65039;" onclick="sessionStorage.setItem('fillFlag', 1)"><br>
              </form>
              </div>
+            <input type="button" class="submitBtnG" value="One Module" style="display:inline;" onClick="window.location.href='/'">
+            <input type="button" class="submitBtnG" value="Many Modules" style="display:inline;" onClick="window.location.href='/overall/'">
              <hr class="line">
              Options:<br> Clear Table: <input type="button" value="Clear" class="Btn" id="clearAll" name="clearAll"  onclick="window.clear()">
              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set Grading Scale for all Components:
@@ -858,8 +914,13 @@
           <output class="Res2" id="gradeRes"></output>
           <br> <output class="Res3"> Module GPA: </output>
           <output class="Res4" id="gpaRes"></output>
-       </div>
-       <div class="love">
+        </div>
+        {% if use_count %}
+        <br> <output style="font-style: italic;"> This tool was used <b>{{use_count|intcomma}}</b> times since launch</output>
+        {% endif %}
+
+       {% comment %} {% include 'passionfruit_ad.html' %} {% endcomment %}
+       {% comment %} <div class="love">
             <output> Love ❤ this tool? Buy Us a Coffee! (PayPal) </output>
        </div>
        <div class="donate">
@@ -868,13 +929,13 @@
                 <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
                 <img alt="" border="0" src="https://www.paypal.com/en_IE/i/scr/pixel.gif" width="1" height="1" />
             </form>
-       </div>
+       </div> {% endcomment %}
        <div class = "disclaimer">
 
-          <output>DISCLAIMER: this calculator uses the 21 point calculation system provided by UCD to compute the overall module grade. This result is not officially endorsed by UCD, and can vary from your actual result based on the calculation methods of the respective Module Coordinator. By your use of this calculator, you agree that the obtained result is only approximate, non-binding and for estimation purposes only. Accurate with UCD Grading Schemes as of 2021.</output>
+          <output>DISCLAIMER: this calculator uses the 21 point calculation system provided by UCD to compute the overall module grade. This result is not officially endorsed by UCD, and can vary from your actual result based on the calculation methods of the respective Module Coordinator. By your use of this calculator, you agree that the obtained result is only approximate, non-binding and for estimation purposes only. Accurate with UCD Grading Schemes as of 2024.</output>
        </div>
        <div class = "credit">
-          <output>Grade Calculator made by University College Dublin Engineering Students Aness Qawlaq and Yevhenii Mormul as an Extracurricular Project</output>
-       </div>
+          <output>Grade Calculator made by University College Dublin Engineering Students <a style="color: #FFA500" target="_blank" href="https://www.linkedin.com/in/aness-qawlaq">Aness Al-Qawlaq</a> and <a style="color:#FFA500" target="_blank" href="https://ie.linkedin.com/in/yevhenii-mormul-89b71015a">Yevhenii Mormul</a> for fun :)</output>
+        </div>
     </div>
 </html>

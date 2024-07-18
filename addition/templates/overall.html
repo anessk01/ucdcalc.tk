@@ -1,0 +1,829 @@
+{% load humanize %}
+
+<!DOCTYPE html>
+<html>
+    {% load static %}
+    <title>Grade Calculator for UCD Students</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.65">
+    <head>
+        <script src="https://unpkg.com/htmx.org"></script>
+        <link rel="stylesheet" href="/static/css/classes.css"/>    
+        <link rel="shortcut icon" href="/path/to/favicon.ico">
+        <meta charset="UTF-8">
+        <meta name="description" content="Calculate your grade point average with our automated UCD GPA calculator, that utilises the UCD grading schemes and conversion scales to help University College Dublin students determine their module and overall grade.">
+        <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="{% static 'js\plugins\johnpolacek-stacktable.js-25ca16a\stacktable.js' %}"></script>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-4VK28PN9YC"></script>
+        <script type="text/javascript">
+        <!--
+
+        </script>
+        <!-- Go to www.addthis.com/dashboard to customize your tools --> <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5ffa20ad3cb9b16a"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'G-4VK28PN9YC');
+        </script>
+        <script>
+            function postScroll(){
+                $('#bottomWrapperRes').fadeOut('fast', function() {
+                    $(this).empty().show();
+                });
+                setTimeout(function() {
+                    let form = document.getElementById('myForm');
+                    htmx.trigger(form, 'submit', {target: '#bottomWrapperRes'});
+                }, 500); 
+                $('body,html').animate({scrollTop: 3000}, 800);
+            };
+        </script>
+        <script type="text/javascript">
+            function clear(){
+                var z = numCompOVR.selectedIndex;
+                sessionStorage.clear();
+                showHide(z);
+                $('#setScales').val(1);
+                $('.nameDisp').hide();
+                $('.ResRow').hide();
+                window.location.href = '/overall/';
+                sessionStorage.setItem('fillflagOVR',0);
+            }
+        </script>
+        <script type="text/javascript">
+            function loadSettings() {
+                var a, b, c, d, e, n, t, p;
+                console.log("t: " + t);
+                if(sessionStorage.getItem('numCompOVR') == 0||sessionStorage.getItem('numCompOVR') == null){
+                    $("#numCompOVR").val(6).change();
+                    n=5;
+                }
+                else{
+                    $('#numCompOVR').val(sessionStorage.getItem('numCompOVR'));
+                    n=numCompOVR.selectedIndex;
+                    console.log("n: " + n);
+                }
+                showHide(n);
+                {% if s is not None %}
+                    {% autoescape off %}
+                    $("#numCompOVR").val({{returnedN}}).change();
+                    autoFillFromSearch({{returnedN}}, {{w}}, {{s}}, {{m}});
+                    console.log('done!');
+                    for(var i =0; i<{{returnedN}}; i++){
+                        var j = i+1;
+                        p = "out" + j;
+                        console.log(p);
+                        document.getElementById(p).innerHTML = {{names}}[i];
+                    }
+                    $('.nameDisp').show();
+                    document.getElementById('nameDisp').innerHTML = 'AutoFilled: ' + '{{title}}';
+                    sessionStorage.setItem('nameDisp', 'AutoFilled: ' + '{{title}}');
+                    if({{error}}.length!=0){
+                        for(var i = 0; i<{{error}}.length;i++){
+                            if({{error}}[i]=='graded'){
+                                var p = '#scale' + {{codes}}[i];
+                                console.log(p + 'should become red');
+                            }
+                            if({{error}}[i]=='codeNotFound'){
+                                alert('Error: Module Code Not Found');
+                                window.location.href = '/';
+                                sessionStorage.setItem('fillflagOVR', 0);
+                            }
+                        }
+                    }
+                    for(var i = 1; i<={{returnedN}}; i++){
+                            s = 'name' + i;
+                            d = '#out' + i;
+                            console.log('fetched: ' + $(d).val());
+                            sessionStorage.setItem(s, $(d).val());
+                    }
+                    {% endautoescape %}
+                {% endif %}
+
+                {% if result is not none%}
+                    var len = '{{result}}'.length;
+                    var arr = '{{result}}'.split(";");
+                    document.getElementById('gpaRes').innerHTML = arr[0];
+                    if(len>10){
+                        $('#gpaRes').css("font-size", "0.8em");
+                    }
+                    else{
+                        $('#gpaRes').css("font-size", "4em");
+                    }
+                    if(len < 10){
+                        if(parseFloat('{{result}}')>=3.68){
+                            document.getElementById('hons').innerHTML = "(1:1)";
+                        }
+                        else if(parseFloat('{{result}}')>=3.08){
+                            document.getElementById('hons').innerHTML = "(2:1)";
+                        }
+                        else if(parseFloat('{{result}}')>=2.48){
+                            document.getElementById('hons').innerHTML = "(2:2)";
+                        }
+                        else if(parseFloat('{{result}}')>=2.48){
+                            document.getElementById('hons').innerHTML = "Pass";
+                        }
+                    }
+                {% endif %}
+
+                if({{calcFlag}}==1){
+                    $('body,html').animate({scrollTop: 3000}, 800);
+                }
+
+                var z = n;
+                z++;
+                for(var i=1 ;i<=z;i++){
+                    console.log(i);
+                    a='#modGrade' + i;
+                    b='#scale' + i;
+                    c='#weight' + i;
+                    d='#mustpass' + i;
+                    e ='#scale' + i;
+                    $(a).val(sessionStorage.getItem(a));
+                    $(b).val(sessionStorage.getItem(b));
+                    $(c).val(sessionStorage.getItem(c));
+                    if(sessionStorage.getItem(d) == 'false'){
+                        $(d).prop('checked', false);
+                    }
+                    else if(sessionStorage.getItem(d) == 'true'){
+                        $(d).prop('checked', true);
+                    }
+                    if(sessionStorage.getItem(e) == null){
+                        $(e).val(1).change();
+                    }
+                    else{
+                        $(e).val(sessionStorage.getItem(e));
+                    }
+                    console.log("current index: " + numCompOVR.selectedIndex);
+                }
+            }
+            </script>
+            <script type="text/javascript">
+            function saveSettings() {
+                $('tr:visible', '#mainTable').css("border-bottom", "0px solid #000000");
+                $('tr:visible:last', '#mainTable').css("border-bottom", "2px solid #007eb5");
+                console.log("saving!!");
+                var z = numCompOVR.selectedIndex;
+                z++;
+                var a, b, c, d, e;
+                sessionStorage.setItem('numCompOVR', z);
+                var numDetect = 0;
+                for (var i = 1; i <= z; i++) {
+                    a = '#modGrade' + i;
+                    b = '#scale' + i;
+                    c = '#weight' + i;
+                    d = '#mustpass' + i;
+                    e = '#scale' + i;
+                    var p = "gError" + i;
+                    console.log("found: " + $(a).val());
+                    var gradeLetters = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E", "F", "G", "NG"];
+                    var passList = ["pass", "Pass", "PASS", "P"];
+                    var failList = ["fail", "Fail", "FAIL", "F"];
+                    var f = sessionStorage.getItem('fillflagOVR');
+                    var classLoop1, classLoop2, classLoop3, classLoop4;
+                    var id1, id2, id3, id4;
+                    if(screen.width <= 699){
+                        $("#headContent").css("width", "100%");
+                        $("#logo").css("width", "80%");
+                        $("#logo").css("margin", "0 auto");
+                        for(var t=1;t<=z;t++){
+                            classLoop1 = ".dupGrades" +t;
+                            classLoop2 = ".dupScales" +t;
+                            classLoop3 = ".dupWeights" +t;
+                            classLoop4 = ".dupMPs" +t;
+                            id1 = "#modGrade" + t;
+                            id2 = '#scale' + t;
+                            id3 = '#weight' + t;
+                            id4 = '#mustpass' + t;
+                            console.log(" " + id2 + " " + $(id2).val());
+                            $(classLoop2).val($(id2).val());
+
+                            [].forEach.call(document.querySelectorAll(classLoop1), function(el1) {
+                                el1.value = $(id1).val();
+                                console.log("relative");
+                            });
+                            [].forEach.call(document.querySelectorAll(classLoop3), function(el3) {
+                                el3.value = $(id3).val();
+                            });
+                            $(classLoop4).prop('checked', $(id4).is(":checked"));
+                        }
+                    }
+                    sessionStorage.setItem(a, $(a).val());
+                    var wht = 0;
+                    if (($(b).val() == 0 && $(a).val() != "") || (passList.includes($(a).val()) == false && failList.includes($(a).val()) == false && $(b).val() == 5)) {
+                        if ($(b).val() == 0 && $(a).val() != "") {
+                            document.getElementById(p).innerHTML = "Graded modules must be input in letter form";
+                            $(a).css("border", "3px solid #FF0000");
+                        }
+                        if (passList.includes($(a).val()) == false && failList.includes($(a).val()) == false && $(b).val() == 5) {
+                            document.getElementById(p).innerHTML = "Please enter either 'pass' or 'fail'";
+                            $(a).css("border", "3px solid #FF0000");
+                            if(gradeLetters.includes($(a).val())){
+                               wht=1;
+                            }
+                        }
+                    } else {
+                        document.getElementById(p).innerHTML = ".";
+                        $(a).css("border", "1px solid #000000");
+                    }
+                    if (gradeLetters.includes($(a).val()) == false && $(a).val()!="" && passList.includes($(a).val()) == false) {
+                        document.getElementById(p).innerHTML = "Warning: check grade input";
+                        $(a).css("border", "3px solid #FF0000");
+                    } else {
+                        sessionStorage.setItem("testVar", "REACHED");
+                        var doneOnce = sessionStorage.getItem("noREP");
+                        if (f == 0 && doneOnce == 0) {
+                            sessionStorage.setItem("noREP", 1);
+                            $(b).val(0).change();
+                        }
+                        console.log("CORRECTED");
+                        if(!wht){
+                            document.getElementById(p).innerHTML = ".";
+                            $(a).css("border", "1px solid #000000");
+                        }
+                        else{
+                            numDetect = 1;
+                        }
+                    }
+
+                 
+                    
+                }
+            }
+
+        </script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                $("#title").hide();
+                var l = sessionStorage.getItem('firstTimeOVR');
+                var str;
+                console.log('l is: ' + l);
+                if(l==null){
+                    sessionStorage.setItem('firstTimeOVR', 'N');
+
+                    //code to only be run once:
+                    sessionStorage.setItem('fillflagOVR', 0);
+                    console.log('D:' + d);
+                    sessionStorage.setItem("noREP", 0);
+                    {% for k in list %}
+                        str = "gError" + {{k}};
+                        document.getElementById(str).innerHTML = ".";
+                        str = "cError" + {{k}};
+                        document.getElementById(str).innerHTML = ".";
+                    {% endfor %}
+                }
+                var s ='';
+                var f = sessionStorage.getItem('fillflagOVR');
+                var d ='';
+                if(f==0){
+                    $('.nameDisp').hide();
+                }
+                if({{calcFlag}}==0){
+                    $('.ResRow').hide();
+                    console.log("result should be hidden");
+                }
+                if({{calcFlag}}==1 && f==1){
+                    $('.nameDisp').show();
+                    $('#nameDisp').val(sessionStorage.getItem('nameDisp'));
+                    var n = sessionStorage.getItem('numCompOVR');
+                    console.log('fetched n: ' + n);
+                    for(var i = 1; i<=n; i++){
+                        s = 'name' + i;
+                        d = '#out' + i;
+                        $(d).val(sessionStorage.getItem(s));
+                    }
+                }
+                else if({{calcFlag}}==1){
+                    $('.ResRow').show();
+                    console.log("result should be shown");
+                }
+                else if(f==1){
+                    console.log("TOGGLED");
+                    $('body,html').animate({scrollTop: 390}, 800);
+                }
+                if (screen.width <= 699) {
+                    $('#mainTable').cardtable({hideOriginal:true});
+                    $('#mainTable').hide();
+                }
+                //-->
+                $("#numCompOVR").val(6).change();
+                n=5;
+                {% comment %} loadSettings(); {% endcomment %}
+                var d;
+                var str;
+                {% if s is not None %}
+                    for(var j =1; j<={{returnedN}}; j++){
+                        str = "gError" + j;
+                        console.log("g: " + str);
+                        document.getElementById(str).innerHTML = "AutoFilled.";
+                    }
+                {% endif %}
+            });
+        </script>
+        <script type="text/javascript">
+          function showHide(x) {
+            console.log("showHide reached, n= " + x);
+            var y =x+1;
+            var s = 'test';
+            for (var i = 1; i <= {{number}}; i++){
+                s='.row'+i;
+                $(s).hide();
+            }
+            for (var i = 1; i <= y; i++){
+                s='.row'+i;
+                $(s).show();
+            }
+          }
+        </script>
+        <script type="text/javascript">
+          function gradeClear() {
+            var b, y;
+            console.log('clearing grades!');
+            for(var i=0 ;i<{{number}};i++){
+                y=i+1;
+                b='#modGrade' + y;
+                sessionStorage.setItem(b, "");
+                $(b).val("").change();
+            }
+          }
+        </script>
+        <script type="text/javascript">
+            function autoFillFromSearch(n, w, s, m) {
+                var t = n-1;
+                showHide(t);
+                var b, c, d, y;
+                for(var i=0 ;i<n;i++){
+                    y=i+1;
+                    b='#scale' + y;
+                    c='#weight' + y;
+                    d='#mustpass' + y;
+                    $(b).val(s[i]).change();
+                    $(c).val(w[i]).change();
+                    if(m[i]=='Yes'){
+                        $(d).prop('checked', true).change();
+                    }
+                    else if(m[i]=='No'){
+                        $(d).prop('checked', false).change();
+                    }
+                    else{
+                        $(d).prop('checked', m[i]).change();
+                    }
+                }
+            }
+        </script>
+         <script type="text/javascript">
+            function setScales(v) {
+                var b;
+                for(var i=1 ;i<={{number}};i++){
+                    b="#scale" + i;
+                    $(b).val(v);
+                }
+            }
+        </script>
+     </head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab&display=swap');
+        * {
+            font-family: 'Roboto Slab', serif;
+        }
+
+        .mainTable{
+            border-collapse: collapse;
+            margin: 0;
+            font-size: 0.9em;
+            max-width: 1000px;
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.17);
+        }
+
+        .mainTable thead tr {
+            background-color: #007eb5;
+            color: #ffffff;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .mainTable th,
+        .mainTable td {
+            padding: 12px 15px;
+        }
+
+        .mainTable tbody tr{
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .mainTable tbody tr:nth-of-type(even) {
+          background-color: #f3f3f3;
+        }
+
+        .mainTable tbody tr.active-row {
+          font-weight: bold;
+          color: #007eb5;
+        }
+
+        .line{
+            border: 2px dotted #007eb5;
+            border-radius: 5px;
+            padding-right = 250px;
+        }
+
+        .mainContainer{
+            padding-top: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: auto;
+        }
+        .submitBtn{
+            background-color: #007eb5;
+            color: white;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            border: 3px solid #ffffff;
+            font-size: 1.3em;
+            border-radius: 10px 10px 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        }
+        .submitBtn:hover{
+            background-color: #005d85;
+        }
+        .submitBtnG{
+            background-color: #fec538;
+            color: #3c3c3c;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            margin-right: 5px;
+            margin-left: 5px;
+            border: 3px solid #3c3c3c;
+            font-size: 1.3em;
+            border-radius: 10px 10px 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 0 7px rgba(0, 0, 0, 0.7);
+        }
+        .submitBtnG:hover{
+            background-color: #e6b036;
+        }
+        .Btn{
+            background-color: #007eb5;
+            color: white;
+            border: 2px solid #ffffff;
+            font-size: 0.9em;
+            border-radius: 10px 10px 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.17);
+        }
+        .Btn:hover{
+            background-color: #005d85;
+        }
+        .Btn2{
+            background-color: #ffffff;
+            color: #007eb5;
+            font-weight: bold;
+            border: 2px solid #007eb5;
+            font-size: 1.1em;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 10px 10px 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.17);
+        }
+        .Btn2:hover{
+            background-color: #f3f3f3;
+        }
+        #scrollWrapper{
+            width:100%;
+            overflow: auto;
+            align-items: center;
+        }
+
+       .top{
+            margin: 0 auto;
+            width:60%;
+       }
+
+       #top{
+            margin: 0 auto;
+            width:60%;
+       }
+
+        .nameDisp{
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 1.5em;
+            color: #3c3c3c;
+        }
+
+        .instructions{
+            color: #3c3c3c;
+            max-width: 280px;
+            font-size: 0.82em;
+            font-weight: bold;
+        }
+
+        .intro{
+            margin-top: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #3c3c3c;
+        }
+
+        html,body
+        {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+            overflow-x: hidden;
+        }
+
+        #header{
+            width: 100%;
+            height: 110px;
+            margin-left: -35px;
+            margin-top: -35px;
+            margin-right: -35px;
+            background: #3c3c3c;
+            border: 35px solid #007eb5;
+
+        }
+        #headContent{
+            text-align: center;
+            margin: 0 auto;
+            padding-top: 25px;
+            padding-top: 0;
+            margin-top: 0;
+            width: 750px;
+            color: white;
+            font-size: 1.5em;
+            display: flex;
+        }
+
+        #logo{
+            padding: 10px;
+            padding-top: 33px;
+        }
+
+        .ResRow{
+            margin-top: 25px;
+            margin-bottom: 20px;
+            margin-right: auto;
+            margin-left: auto;
+            max-width: 800px;
+        }
+
+        .disclaimer{
+            margin: 0 auto;
+            margin-top: 25px;
+            margin-bottom: 20px;
+            margin-right: auto;
+            margin-left: auto;
+            font-style: italic;
+            font-weight: bold;
+            font-size: 0.85em;
+            max-width: 70%;
+            color: #007eb5;
+        }
+
+        .credit{
+            margin: 0 auto;
+            margin-top: 35px;
+            margin-bottom: 5px;
+            margin-right: auto;
+            margin-left: auto;
+            font-weight: 150;
+            font-size: 0.65em;
+            max-width: 70%;
+            color: #faff99;
+        }
+
+        .wrapperBottom{
+            padding-top: 25px;
+            padding-bottom: 45px;
+            margin-top: 25px;
+            background-color: #3c3c3c;
+            height: auto;
+            align-items: center;
+            text-align: center;
+            margin-bottom: -100px;
+            margin-left: -50px;
+            margin-right: 0px;
+            color: white;
+        }
+
+        html{
+            height: 100%;
+        }
+        .mainCenter{
+            text-align: center;
+            align-items: center;
+        }
+        .Res1{
+            font-size: 2em;
+        }
+        .Res3{
+            font-size: 1.5em;
+        }
+        .Res4{
+            font-size: 3em;
+        }
+
+        #linkForm{
+            font-size: 0.8em;
+        }
+        ::placeholder {
+           color: #b8b8b8;
+           font-weight: 50;
+        }
+
+       .errorTXT{
+            font-size: 0.7em;
+            font-weight: 100;
+            color: #007eb5
+       }
+       .sErrorTXT{
+            font-size: 0.7em;
+            font-weight: 100;
+            color: #007eb5
+       }
+       @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+       }
+       @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+       }
+
+       #USP{
+            height: auto;
+            background-color: #007eb5;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            margin-bottom: 7px;
+            border-radius: 10px 10px 10px 10px;
+       }
+       #top, .boxClass {
+            display: block;
+        }
+       .boxClass{
+            {% comment %} top: 5px; {% endcomment %}
+            margin: 0 auto;
+            color: white;
+            font-size: 1em;
+            {% comment %} width:60%; {% endcomment %}
+            height: auto;
+            background-color: #083c3c;
+            padding: 30px;
+            {% comment %} paddingbottom: 15px; {% endcomment %}
+            {% comment %} margin-bottom: 7px; {% endcomment %}
+            border-radius: 10px 10px 10px 10px;
+       }
+
+       .linkStyle:hover{
+           color: white;
+       }
+       .linkStyle{
+           color: #fec538;
+       }
+       #1{
+            width: 55%;
+            color: #3c3c3c;
+            height: 15%;
+            margin-top: 10px;
+            font-size: 1.1em;
+            text-align: center;
+            border-radius: 10px 10px 10px 10px;
+       }
+       #fillReq{
+            font-size: 1.4em;
+            color: white;
+            font-weight: 100;
+       }
+       input[type=text] {
+          text-align: center;
+          padding: 5px;
+          width: 90px;
+          border-radius: 7px 7px 7px 7px;
+       }
+       select {
+          text-align: center;
+          padding: 5px;
+          width: 220px;
+          font-size: 0.8em;
+          text-overflow: ellipsis;
+          border-radius: 7px 7px 7px 7px;
+       }
+       .donate{
+            margin: 10px;
+       }
+       .love{
+            font-size: 0.9em;
+            color: #fec538;
+       }
+     </style>
+
+
+    <div class="mainCenter">
+       <div class="head" id="header">
+          <div class="pageTitle" id="headContent">
+              <div id="logo">
+                <img width="100%" height="auto" src="{% static 'title.png' %}" alt="LogoLogo"><output>
+              </div>
+          </div>
+       </div>
+       <div class="intro">
+           <output><h2>UCD GPA Calculator for Students </h2>Have your grades for multiple subjects? Use this tool to find your overall GPA for all modules</output>
+           {% comment %} <div class="top">
+            <br><br><div class="boxClass">
+                    <img width="20%" height="auto" src="{% static 'elective.png' %}" alt="LogoLogo"><output>
+                    <br>Struggling to pick the right UCD elective? Sign up to our partner site to view module feedback, elective recommendations and more
+                    <a href="http://electivehq.tk" class="linkStyle">here</a> 
+                </div>
+            </div> {% endcomment %}
+           <a href="https://forms.gle/vKm7B5HyR1phHXDj8" target="_blank" rel="nofollow" id="linkForm">Faced any errors? Report them here.</a>
+       </div>
+       <input type="button" class="submitBtnG" value="One Module" style="display:inline;" onClick="window.location.href='/'">
+       <input type="button" class="submitBtnG" value="Many Modules" style="display:inline;" onClick="window.location.href='/overall/'">
+       <div id="scrollWrapper">
+          <div id="top">
+             <hr class="line">
+            Clear Table: <br> <input type="button" value="Clear" class="Btn" id="clearAll" name="clearAll"  onclick="window.clear()">
+             <form action="overall" id="myForm"  hx-get="/overall" hx-target="#bottomWrapperRes" hx-swap="innerHTML">
+                <br>Select Number of Modules to Find Overall GPA:
+                <select name=numCompOVR id="numCompOVR" class="numCompOVR" onchange="showHide(this.selectedIndex); saveSettings();">
+                   {% for i in list %}
+                   <option value={{i}}>{{i}}</option>
+                   {% endfor %}
+                </select>
+                <hr class="line">
+          </div>
+          <div class="mainContainer">
+          <output id="nameDisp"  class="nameDisp"></output>
+          <table class = "mainTable" id="mainTable">
+          <thead>
+          <tr>
+          <th>Module</th>
+          <th>Grade</th>
+          <th>Credits</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for i  in list%}
+          <tr class = row{{i}}>
+          <td>{{i}}
+          <br> <output class="errorTXT">.</output>
+          </td>
+          <td><input type="text" name =modGrade{{i}} id =modGrade{{i}} class="dupGrades{{i}}" onchange="saveSettings()" placeholder="eg: A/pass" title="Letter Grade.">
+          <br> <output class="errorTXT" id="gError{{i}}"></output>
+          </td>
+          <td><input type="text" name =modCredits{{i}} id =modCredits{{i}} placeholder="eg: 5/10/20" title="Credits" value="5">
+          <br> <output class="errorTXT" id="cError{{i}}">.</output>
+          </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+          <input class="submitBtn" type="button" value="Calculate Overall Grade" onclick="postScroll()">
+          </div>
+       </div>
+       </form>
+    </div>
+    <div class="wrapperBottom">
+        <div id="bottomWrapperRes">
+        </div>
+       {% comment %} <div class = "ResRow">
+          <br> <output class="Res3"> Overall GPA: </output>
+          <output class="Res4" id="gpaRes"></output>
+          <br> <output class="Res3"> Award: </output>
+          <output class="Res4" id="hons"></output>
+       </div> {% endcomment %}
+
+       {% comment %} {% include 'passionfruit_ad.html' %} {% endcomment %}
+
+
+       {% comment %} <div class="love">
+            <output> Love ❤ this tool? Buy Us a Coffee! (PayPal) </output>
+       </div>
+       <div class="donate">
+           <form action="https://www.paypal.com/donate" method="post" target="_top">
+                <input type="hidden" name="hosted_button_id" value="QURBRUUQSC9S2" />
+                <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+                <img alt="" border="0" src="https://www.paypal.com/en_IE/i/scr/pixel.gif" width="1" height="1" />
+            </form>
+       </div> {% endcomment %}
+       {% if use_count %}
+       <br> <output style="font-style: italic;"> This tool was used <b>{{use_count|intcomma}}</b> times since launch</output>
+       {% endif %}
+       <div class = "disclaimer">
+
+          <output>DISCLAIMER: this calculator uses the 21 point calculation system provided by UCD to compute the overall module grade. This result is not officially endorsed by UCD, and can vary from your actual result based on the calculation methods of the respective Module Coordinator. By your use of this calculator, you agree that the obtained result is only approximate, non-binding and for estimation purposes only. Accurate with UCD Grading Schemes as of 2024.</output>
+       </div>
+       <div class = "credit">
+          <output>Grade Calculator made by University College Dublin Engineering Students <a style="color: #FFA500" target="_blank" href="https://www.linkedin.com/in/aness-qawlaq">Aness Al-Qawlaq</a> and <a style="color:#FFA500" target="_blank" href="https://ie.linkedin.com/in/yevhenii-mormul-89b71015a">Yevhenii Mormul</a> for fun :)</output>
+       </div>
+    </div>
+</html>

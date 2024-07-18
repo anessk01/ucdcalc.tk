@@ -1,0 +1,17 @@
+.passionfruit_ad_container{
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding-top: 2vh;
+    padding-bottom: 2vh;
+}
+
+.passionfruit_ad{
+    max-width: 80%;
+    max-height: 15vh;
+}
+
+.passionfruit_ad:hover{
+    cursor: pointer;
+}

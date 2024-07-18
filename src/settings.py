@@ -24,7 +24,7 @@ SECRET_KEY = '&)0fh3v2_p=552y0pfw+o7vs7+lfo-o-p#u6apb#0d+1pt@_3#'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['ucd-calc.herokuapp.com', '127.0.0.1', 'www.ucdcalc.tk']
+ALLOWED_HOSTS = ['ucd-calc.herokuapp.com', '127.0.0.1', 'www.ucdcalc.com', 'ucdcalc.com']
 
 # Application definition
 
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'addition',
     'django.contrib.sitemaps',
+    'django.contrib.humanize',
 ]
 
 
@@ -74,12 +75,21 @@ WSGI_APPLICATION = 'src.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'ucdcalc',
+#         'USER': 'postgres',
+#         'PASSWORD': 'pchela123',
+#         'HOST': 'localhost',  # Set to your database host
+#         'PORT': '5432',  # Default PostgreSQL port
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
