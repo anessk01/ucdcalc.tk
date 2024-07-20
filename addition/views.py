@@ -198,32 +198,38 @@ def scrapeUCD(request):
     nameInd = str_of_url.index("pageTitle")
     name = str_of_url[nameInd:]
     name = name[name.index(">") + 1: name.index("<")]
-    print(name)
+    # print(name)
 
     str1 = str_of_url[ind:]
     ind1 = str1.index("</tr></THEAD><TBODY")
     ind2 = str1.index("</TBODY><TFOOT>")
     str1 = str1[ind1:ind2]
     str1 = str1.split("tr ID=CB100-30|")[1:]
-
+    # print(str1)
+    
+    ASS_TITLE_INDEX = 1
+    GRADE_SCALE_INDEX = 3
+    MUSTPASS_INDEX = 4
+    WEIGHT_INDEX = 5
     for i in str1:
         i = i.split("<TD>")
-        comp.append(i[1][:(i[1].index("</TD>"))])
+        
+        comp.append(i[ASS_TITLE_INDEX][:(i[ASS_TITLE_INDEX].index("</TD>"))])
         try:
-            grading.append(gr_dict[i[4][:(i[4].index("</TD>"))]])
+            grading.append(gr_dict[i[GRADE_SCALE_INDEX][:(i[GRADE_SCALE_INDEX].index("</TD>"))]])
         except KeyError:
              grading.append(gr_dict["Graded"])
         if (grading[-1] == 0):
             ErrStr.append("graded")
             ErrCodes.append(str(len(grading)))
 
-        weight.append((i[6][(i[6].index("\"rightaligntext\">") + len("\"rightaligntext\">")):(i[6].index("</TD>"))]))
-        mustpass.append(i[5][:(i[5].index("</TD>"))])
+        weight.append((i[WEIGHT_INDEX][(i[WEIGHT_INDEX].index("\"rightaligntext\">") + len("\"rightaligntext\">")):(i[WEIGHT_INDEX].index("</TD>"))]))
+        mustpass.append(i[MUSTPASS_INDEX][:(i[MUSTPASS_INDEX].index("</TD>"))])
 
     for i in range(len(comp)):
         comp[i] = (comp[i].split(" "))[:5]
         for j in range(len(comp[i])):
-            print(comp[i][j])
+            # print(comp[i][j])
             try:
                 comp[i][j] = comp[i][j][0].capitalize() + comp[i][j][1:]
             except IndexError:
