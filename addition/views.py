@@ -156,6 +156,7 @@ def average_mod(weight, score, grad_mode, mustpass):
     return "Fail;0"
 
 
+
 def scrapeUCD(request):
     ErrStr = []
     ErrCodes = []
@@ -195,10 +196,15 @@ def scrapeUCD(request):
                       {'returnedN': len(comp), 'names': comp, 's': grading, 'w': weight, 'm': mustpass, 'number': 20,
                        'list': mods, 'error': ErrStr, 'codes': ErrCodes, 'calcFlag': 0})
 
-    nameInd = str_of_url.index("pageTitle")
+    nameInd = str_of_url.index('<div class="col-md-10">')
     name = str_of_url[nameInd:]
-    name = name[name.index(">") + 1: name.index("<")]
-    # print(name)
+    # print('Name ', name)
+    # nameInd = str_of_url.index('<h4>')
+    # name = name[nameInd:]
+    # name = name[0: name.index("<")]
+    name = name[name.index("<h4>") + 4: name.index("</")]
+
+    print('Name:', name)
 
     str1 = str_of_url[ind:]
     ind1 = str1.index("</tr></THEAD><TBODY")
@@ -242,6 +248,94 @@ def scrapeUCD(request):
     return render(request, 'home.html',
                   {'returnedN': len(comp), 'names': comp, 's': grading, 'w': weight, 'm': mustpass, 'number': 20,
                    'list': mods, 'error': ErrStr, 'calcFlag': 0, 'title': name, 'codes': ErrCodes})
+
+
+# def scrapeUCD(request):
+#     ErrStr = []
+#     ErrCodes = []
+#     comp = []
+#     grading = []
+#     weight = []
+#     mustpass = []
+
+#     gr_dict = {"Graded": 0, "Standard conversion grade scale 40%": 1,
+#                "Alternative linear conversion grade scale 40%": 2,
+#                "Alternative non-linear conversion grade scale 50%": 3,
+#                "Alternative linear conversion grade scale 60%": 4,
+#                "Pass/Fail Grade Scale": 5}
+#     module = (request.GET['modCode'])
+#     module = list(module)
+#     for i in range(len(module)):
+#         module[i] = module[i].capitalize()
+#     module = "".join(module)
+#     mods = []
+#     for i in range(20):
+#         mods.append(i + 1)
+    
+#     url = 'https://sisweb.ucd.ie/usis/!W_HU_MENU.P_PUBLISH?p_tag=MODULE&MODULE=' + module
+#     proxies = {
+#         "http":None,
+#         "https":None
+#     }
+#     r = requests.get(url, verify = False, proxies = proxies)
+#     str_of_url = str(r.content, 'utf-8')
+
+#     try:
+#         ind = str_of_url.index("Assessment Strategy")
+#     except ValueError:
+#         ErrStr.append("codeNotFound")
+#         ErrCodes.append(" ")
+#         return render(request, 'home.html',
+#                       {'returnedN': len(comp), 'names': comp, 's': grading, 'w': weight, 'm': mustpass, 'number': 20,
+#                        'list': mods, 'error': ErrStr, 'codes': ErrCodes, 'calcFlag': 0})
+
+#     nameInd = str_of_url.index("pageTitle")
+#     name = str_of_url[nameInd:]
+#     name = name[name.index(">") + 1: name.index("<")]
+#     # print(name)
+
+#     str1 = str_of_url[ind:]
+#     ind1 = str1.index("</tr></THEAD><TBODY")
+#     ind2 = str1.index("</TBODY><TFOOT>")
+#     str1 = str1[ind1:ind2]
+#     str1 = str1.split("tr ID=CB100-30|")[1:]
+#     # print(str1)
+    
+#     ASS_TITLE_INDEX = 1
+#     GRADE_SCALE_INDEX = 3
+#     MUSTPASS_INDEX = 4
+#     WEIGHT_INDEX = 5
+#     for i in str1:
+#         i = i.split("<TD>")
+        
+#         comp.append(i[ASS_TITLE_INDEX][:(i[ASS_TITLE_INDEX].index("</TD>"))])
+#         try:
+#             grading.append(gr_dict[i[GRADE_SCALE_INDEX][:(i[GRADE_SCALE_INDEX].index("</TD>"))]])
+#         except KeyError:
+#              grading.append(gr_dict["Graded"])
+#         if (grading[-1] == 0):
+#             ErrStr.append("graded")
+#             ErrCodes.append(str(len(grading)))
+
+#         weight.append((i[WEIGHT_INDEX][(i[WEIGHT_INDEX].index("\"rightaligntext\">") + len("\"rightaligntext\">")):(i[WEIGHT_INDEX].index("</TD>"))]))
+#         mustpass.append(i[MUSTPASS_INDEX][:(i[MUSTPASS_INDEX].index("</TD>"))])
+
+#     for i in range(len(comp)):
+#         comp[i] = (comp[i].split(" "))[:5]
+#         for j in range(len(comp[i])):
+#             # print(comp[i][j])
+#             try:
+#                 comp[i][j] = comp[i][j][0].capitalize() + comp[i][j][1:]
+#             except IndexError:
+#                 try:
+#                     comp[i][j] = comp[i][j][0].capitalize()
+#                 except IndexError:
+#                     j = j
+#         comp[i] = " ".join(comp[i])
+
+#     return render(request, 'home.html',
+#                   {'returnedN': len(comp), 'names': comp, 's': grading, 'w': weight, 'm': mustpass, 'number': 20,
+#                    'list': mods, 'error': ErrStr, 'calcFlag': 0, 'title': name, 'codes': ErrCodes})
 
 
 #print(average_mod([50, 50], ["B", "F-"], ["0", "0"], ["N", "Y"]))
