@@ -229,6 +229,16 @@ def scrapeUCD(request):
             ErrStr.append("graded")
             ErrCodes.append(str(len(grading)))
 
+        # print('WEIGHT_INDEX', WEIGHT_INDEX)
+        # print(i[WEIGHT_INDEX])
+        # print(i)
+
+        # print(i[WEIGHT_INDEX].index("\"rightaligntext\">"))
+
+        for elem in range(len(i)):
+            if "\"rightaligntext\">" in i[elem]:
+                WEIGHT_INDEX = elem
+                MUSTPASS_INDEX = elem-1
         weight.append((i[WEIGHT_INDEX][(i[WEIGHT_INDEX].index("\"rightaligntext\">") + len("\"rightaligntext\">")):(i[WEIGHT_INDEX].index("</TD>"))]))
         mustpass.append(i[MUSTPASS_INDEX][:(i[MUSTPASS_INDEX].index("</TD>"))])
 
