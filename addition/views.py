@@ -217,6 +217,7 @@ def scrapeUCD(request):
     GRADE_SCALE_INDEX = 3
     MUSTPASS_INDEX = 4
     WEIGHT_INDEX = 5
+    grade_separator = '<div class="text-end">'
     for i in str1:
         i = i.split("<TD>")
         
@@ -235,11 +236,14 @@ def scrapeUCD(request):
 
         # print(i[WEIGHT_INDEX].index("\"rightaligntext\">"))
 
+
         for elem in range(len(i)):
-            if "\"rightaligntext\">" in i[elem]:
+            if grade_separator in i[elem]:
                 WEIGHT_INDEX = elem
                 MUSTPASS_INDEX = elem-1
-        weight.append((i[WEIGHT_INDEX][(i[WEIGHT_INDEX].index("\"rightaligntext\">") + len("\"rightaligntext\">")):(i[WEIGHT_INDEX].index("</TD>"))]))
+        print(WEIGHT_INDEX)
+        print(i, i[WEIGHT_INDEX])
+        weight.append((i[WEIGHT_INDEX][(i[WEIGHT_INDEX].index(grade_separator) + len(grade_separator)):(i[WEIGHT_INDEX].index("</div>"))]))
         mustpass.append(i[MUSTPASS_INDEX][:(i[MUSTPASS_INDEX].index("</TD>"))])
 
     for i in range(len(comp)):
